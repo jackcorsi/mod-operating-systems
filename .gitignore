@@ -1,0 +1,6 @@
+exercise1/*/*.o
+
+#ignore files with no extension
+*
+!*/
+!*.*

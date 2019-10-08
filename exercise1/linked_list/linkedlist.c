@@ -17,6 +17,8 @@
 // TODO: Implement those methods!
 int get(list * l, unsigned int index){
 	list_node *n = l->hd;
+	if (!n)
+		return -1;
 
 	for (; index > 0; index--) {
 		if (n)

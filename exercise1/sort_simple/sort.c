@@ -41,4 +41,6 @@ int main(int argc, char ** argv) {
 		}
 		printf("%s", out_buf);
 	}
+
+	return 0;
 }

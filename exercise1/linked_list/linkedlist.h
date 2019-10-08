@@ -13,8 +13,13 @@
 
 // TODO: Define additional data structures here when you need them.
 
-typedef struct list{
-  // TODO: define your list structure here!
+typedef struct list_node {
+	int data;
+	struct list_node *next;
+} list_node;
+
+typedef struct list {
+  list_node *hd;
 } list;
 
 // --- Functions ---

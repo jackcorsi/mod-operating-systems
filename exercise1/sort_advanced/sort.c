@@ -46,7 +46,8 @@ int main(int argc, char ** argv) {
 
 			char c = next;
 			bigbuffer[i_next++] = c; //Write string to bigbuffer first (so most lines will only need one malloc)
-		} else { //Transfer line out of bigbuffer
+		} else {
+			//--Transfer line out of bigbuffer--
 			
 			if (strings_last + 1 >= strings_size) { //Make space for another string pointer
 				strings_size *= RESIZE_MULTIPLIER;

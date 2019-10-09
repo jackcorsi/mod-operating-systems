@@ -1,7 +1,6 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include "string.h"
-#include "stdbool.h"
 
 #define RESIZE_MULTIPLIER 2
 
@@ -31,7 +30,7 @@ int main(int argc, char ** argv) {
 	bigbuffer = (char *) malloc(bigbuffer_size);
 
 	int i_next = 0; //Character position in line
-	while (true) {
+	while (1) {
 		int next = getchar();
 
 		if (next != '\n' && next != EOF) {

@@ -35,8 +35,7 @@ int main(int argc, char ** argv) {
 
 		if (next != '\n' && next != EOF) {
 			if (i_next >= bigbuffer_size) { //Resize bigbuffer
-				bigbuffer_size *= RESIZE_MULTIPLIER;
-				char *bigbuffer_new = (char *) realloc(bigbuffer, bigbuffer_size);
+				char *bigbuffer_new = (char *) realloc(bigbuffer, bigbuffer_size *= RESIZE_MULTIPLIER);
 				if (!bigbuffer_new) {
 					cleanup();
 					return -1;

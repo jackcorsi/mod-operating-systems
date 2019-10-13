@@ -15,10 +15,8 @@
 
 
 // TODO: Implement those methods!
-int get(list * l, unsigned int index){
+int get(list * l, unsigned int index) {
 	list_node *n = l->hd;
-	if (!n)
-		return -1;
 
 	for (; index > 0; index--) {
 		if (n)
@@ -27,23 +25,25 @@ int get(list * l, unsigned int index){
 			return -1;
 	}
 
-	return n->data;
+	if (n)
+		return n->data;
+	else
+		return -1;
 }
 
-int prepend(list * l, int data){
+int prepend(list * l, int data) {
 	list_node *new_node = (list_node *) malloc(sizeof(list_node));
 	if (!new_node)
 		return -1;
 
 	new_node->data = data;
-	if (l->hd)
-		new_node->next = l->hd->next;
+	new_node->next = l->hd;
 
 	l->hd = new_node;
 	return 0;
 }
 
-int append(list * l, int data){
+int append(list * l, int data) {
 	list_node *new_node = (list_node *) malloc(sizeof(list_node));
 	if (!new_node)
 		return -1;
@@ -64,7 +64,7 @@ int append(list * l, int data){
 	return 0;
 }
 
-int remove_element(list * l, unsigned int index){
+int remove_element(list * l, unsigned int index) {
 	if (index == 0) {
 		list_node *target = l->hd;
 		if (!target)
@@ -94,37 +94,30 @@ int remove_element(list * l, unsigned int index){
 	}
 }
 
-int insert(list * l, unsigned int index, int data){
+int insert(list * l, unsigned int index, int data) {
+	list_node *n = l->hd;
+
+	if (!n)
+		return -1;
+
+	for (; index > 0; index--) { //Find insert location
+		if (n->next)
+			n = n->next;
+		else
+			return -1;
+	}
+
 	list_node *new_node = (list_node *) malloc(sizeof(list_node));
 	if (!new_node)
 		return -1;
 
-	list_node *n = l->hd;
-
-	if (index == 0) {
-		if (!n)
-			return -1;
-		else {
-			new_node->next = n->next;
-			n->next = new_node;
-		}
-	} else {
-		for (; index > 0; index--) {
-			if (n->next)
-				n = n->next;
-			else
-				return -1;
-		}
-
-		new_node->next = n->next;
-		n->next = new_node;
-	}
-
+	new_node->next = n->next;
 	new_node->data = data;
+	n->next = new_node;
 	return 0;
 }
 
-void print_list(list * l){
+void print_list(list * l) {
 	list_node *n = l->hd;
 	if (!n) {
 		printf("empty list\n");
@@ -139,11 +132,11 @@ void print_list(list * l){
 	printf("\n");
 }
 
-void init(list * l){
+void init(list * l) {
 	l->hd = NULL;
 }
 
-void destroy(list *l){
+void destroy(list *l) {
 	list_node *n = l->hd;
 	l->hd = NULL;
 

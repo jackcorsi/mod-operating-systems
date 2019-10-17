@@ -6,6 +6,8 @@ int main() {
 	list my_list;
 	list *l = &my_list;
 	init(l);
+	destroy(l);
+	init(l);
 
 	print_list(l); //empty list
 	append(l, 21);
@@ -53,6 +55,7 @@ int main() {
 	assert(insert(l, -1, 100) == -1);
 	destroy(l);
 
+	init(l);
 	append(l, 71);
 	print_list(l); //71
 	remove_element(l, 0);
@@ -62,6 +65,8 @@ int main() {
 	append(l, 132);
 	append(l, 133);
 	print_list(l); //131, 132, 133
+	assert(get(l, -1) == -1);
+	assert(get(l, -2) == -1);
 
 	remove_element(l, 1);
 	print_list(l); //131, 133
@@ -69,8 +74,11 @@ int main() {
 	insert(l, 0, 16);
 	print_list(l); //131, 16, 133
 
+	insert(l, 1, 255);
+	print_list(l); //131, 16, 255, 133
+
 	assert(remove_element(l, 1) == 0);
-	print_list(l); //131, 133
+	print_list(l); //131, 255, 133
 
 	destroy(l);
 	printf("Completed! Check print outputs\n");

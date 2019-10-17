@@ -18,6 +18,9 @@
 int get(list * l, unsigned int index) {
 	list_node *n = l->hd;
 
+	if (index < 0)
+		return -1;
+
 	for (; index > 0; index--) {
 		if (n)
 			n = n->next;

@@ -1,0 +1,12 @@
+#My IDE stuff
+/CMakeFiles/
+/host-build/
+/include/
+CMakeLists.txt
+*.cbp
+*.cmake
+.idea/
+
+#Binaries
+*.o
+client

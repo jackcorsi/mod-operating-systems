@@ -1,7 +1,2 @@
 */*/*.o
 */*/*/*.o
-
-#ignore files with no extension
-*
-!*/
-!*.*

@@ -11,8 +11,6 @@
 //Maybe print an appropriate message for the getaddrinfo result
 void interpret_addrparse_error(int err);
 
-//TODO Had to install libreadline-dev
-
 int sockfd = 0; //Handle for the socket
 
 int main(int argc, char **argv) {

@@ -5,6 +5,8 @@
 #include <pthread.h>
 #include <errno.h>
 
+#include "protocol.h"
+
 const int BUFFER_PACKETS = 10;
 
 void *main_client(void *sockfd_vptr);
@@ -76,5 +78,10 @@ int main(int argc, char **argv) {
 
 void *main_client(void *sockfd_vptr) {
     int *sockfd = (int *) sockfd_vptr;
+    char *buf = NULL; //The read-in buffer
+    protocol_strlen_t buf_size = 0;
 
+    while (1) {
+
+    }
 }

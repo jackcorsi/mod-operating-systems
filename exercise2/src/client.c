@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <readline/readline.h>
 
+#include "protocol.h"
+
 //Comment the call to disable
 #define PRINT_SOCKET_CREATION_ERROR() //perror(NULL); fflush(stderr)
 #define PRINT_SOCKET_CONNECT_ERROR() //perror(NULL); fflush(stderr)
@@ -59,7 +61,21 @@ int main(int argc, char **argv) {
         if (!line)
             break;
 
-        if (write(sockfd, line, strlen(line) + 1) == -1) {
+        size_t len_size_t = strlen(line);
+        if (len_size_t > PROTOCOL_MAX_STRLEN) {
+            fprintf(stderr, "Line was not sent because it was too long");
+            continue;
+        }
+        protocol_strlen_t len = len_size_t;
+        protocol_strlen_t len_net = to_protocol_byteorder(len);
+
+        if (write(sockfd, &len_net, sizeof(len_net))) { //First send the length of the string we're going to send
+            perror(NULL);
+            free(line);
+            break;
+        }
+
+        if (write(sockfd, line, len) == -1) { //Then send the string
             perror(NULL);
             free(line);
             break;

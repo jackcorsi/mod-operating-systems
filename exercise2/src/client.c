@@ -58,24 +58,22 @@ int main(int argc, char **argv) {
 
     while (1) {
         char *line = readline(NULL);
-        if (!line)
+        if (!line) {
+            if (write(sockfd, &PROTOCOL_FINISHED, sizeof(PROTOCOL_FINISHED) == -1))
+                perror(NULL);
+
             break;
-
-        size_t len_size_t = strlen(line);
-        if (len_size_t > PROTOCOL_MAX_STRLEN) {
-            fprintf(stderr, "Line was not sent because it was too long");
-            continue;
         }
-        protocol_strlen_t len = len_size_t;
-        protocol_strlen_t len_net = to_protocol_byteorder(len);
 
-        if (write(sockfd, &len_net, sizeof(len_net))) { //First send the length of the string we're going to send
+        if (write(sockfd, &PROTOCOL_MORE_STRINGS, sizeof(PROTOCOL_MORE_STRINGS))) {
             perror(NULL);
             free(line);
             break;
         }
 
-        if (write(sockfd, line, len) == -1) { //Then send the string
+        size_t len = strlen(line);
+
+        if (write(sockfd, line, len) == -1) { //Send the string to the server
             perror(NULL);
             free(line);
             break;

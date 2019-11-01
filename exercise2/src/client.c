@@ -7,8 +7,8 @@
 #include "protocol.h"
 
 //Comment the call to disable
-#define PRINT_SOCKET_CREATION_ERROR() //perror(NULL);
-#define PRINT_SOCKET_CONNECT_ERROR() //perror(NULL);
+#define PRINT_SOCKET_CREATION_ERROR() //perror("Failed to create socket");
+#define PRINT_SOCKET_CONNECT_ERROR() //perror("Failed to connect to socket");
 
 int sockfd = 0; //Handle for the socket
 
@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
 
     if (!addr_current) {
         fprintf(stderr, "Failed to connect to the specified host\n");
-        return -1;
+        return 1;
     }
 
     char *line;
@@ -62,13 +62,16 @@ int main(int argc, char **argv) {
             if (write(sockfd, &PROTOCOL_FINISHED, sizeof(PROTOCOL_FINISHED)) == -1)
                 perror("Failed while sending a terminating message to the server");
 
-            break;
+            free(line);
+            close(sockfd);
+            return 1;
         }
 
         if (write(sockfd, &PROTOCOL_MORE_STRINGS, sizeof(PROTOCOL_MORE_STRINGS)) == -1) {
             perror("Failed to send continuation byte to server");
             free(line);
-            break;
+            close(sockfd);
+            return 1;
         }
 
         size_t len = strlen(line);
@@ -76,11 +79,13 @@ int main(int argc, char **argv) {
         if (write(sockfd, line, len + 1) == -1) { //Send the string to the server
             perror("Failed to send the line to the server");
             free(line);
-            break;
+            close(sockfd);
+            return 1;
         }
         free(line);
     }
 
     free(line);
     close(sockfd);
+    return 0;
 }

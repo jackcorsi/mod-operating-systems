@@ -7,9 +7,8 @@
 #include "protocol.h"
 
 //Comment the call to disable
-#define PRINT_SOCKET_CREATION_ERROR() //perror(NULL); fflush(stderr)
-#define PRINT_SOCKET_CONNECT_ERROR() //perror(NULL); fflush(stderr)
-
+#define PRINT_SOCKET_CREATION_ERROR() //perror(NULL);
+#define PRINT_SOCKET_CONNECT_ERROR() //perror(NULL);
 
 int sockfd = 0; //Handle for the socket
 
@@ -27,7 +26,7 @@ int main(int argc, char **argv) {
     struct addrinfo *parse_result;
     int parse_error = getaddrinfo(argv[1], argv[2], &parse_hints, &parse_result);
     if (parse_error) {
-        printf("Failed to interpret hostname/port number: %s", gai_strerror(parse_error));
+        printf("Couldn't interpret hostname/port number: %s\n", gai_strerror(parse_error));
         return 0;
     }
 

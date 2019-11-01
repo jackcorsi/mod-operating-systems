@@ -16,10 +16,8 @@ int logfile_init(char *name) {
 
 #ifndef LOGFILE_OUT_TO_STDOUT
     file = fopen(name, "a");
-    if (!file) {
-        printf("Line 20\n");
+    if (!file)
         return -1;
-    }
 #else
     file = stdout;
 #endif
@@ -33,12 +31,12 @@ int logfile_init(char *name) {
 }
 
 int logfile_write(char *s) {
-    //Increment line_no and write as an atomic operation
+    //Increment line_no and write, as an atomic operation
     pthread_mutex_lock(&mutex);
     int result = fprintf(file, "%llu %s\n", line_no++, s);
     pthread_mutex_unlock(&mutex);
 
-#ifdef LOGFILE_FLUSH_EVERY_LINE
+#ifdef LOGFILE_FLUSH_ON_WRITE
     fflush(file);
 #endif
 

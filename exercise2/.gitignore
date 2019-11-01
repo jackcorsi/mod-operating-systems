@@ -10,6 +10,7 @@ CMakeLists.txt
 #Binaries
 *.o
 client
+serverSingle
 serverThreaded
 
 #Custom testing

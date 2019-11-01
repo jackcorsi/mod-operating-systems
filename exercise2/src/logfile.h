@@ -2,7 +2,7 @@
 #define LOGFILE_H
 
 //#define LOGFILE_OUT_TO_STDOUT //For debugging output
-//#define LOGFILE_FLUSH_EVERY_LINE
+//#define LOGFILE_FLUSH_ON_WRITE
 
 //Open the file ready for writing - return non-zero on success, errno set
 int logfile_init(char *name);

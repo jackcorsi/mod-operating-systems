@@ -7,17 +7,17 @@ client: client.o
 client.o: src/client.c src/protocol.h
 	gcc -g -D_POSIX_SOURCE -Wall -Werror -pedantic -std=c99 -D_GNU_SOURCE -pthread -c src/client.c -lreadline
 
-serverThreaded: serverThreaded.o logfile.o
+serverThreaded: server.o logfile.o
 	gcc -g -D_POSIX_SOURCE -Wall -Werror -pedantic -std=c99 -D_GNU_SOURCE -pthread \
-	-o serverThreaded serverThreaded.o logfile.o -lreadline
+	-o serverThreaded server.o logfile.o -lreadline
 
-serverSingle: serverThreaded.o logfile.o
+serverSingle: server.o logfile.o
 	gcc -g -D_POSIX_SOURCE -Wall -Werror -pedantic -std=c99 -D_GNU_SOURCE -pthread \
-	-o serverSingle serverThreaded.o logfile.o -lreadline
+	-o serverSingle server.o logfile.o -lreadline
 
-serverThreaded.o: src/server_threaded.c src/protocol.h src/logfile.h
+server.o: src/server.c src/protocol.h src/logfile.h
 	gcc -g -D_POSIX_SOURCE -Wall -Werror -pedantic -std=c99 -D_GNU_SOURCE -pthread \
-	-o serverThreaded.o -c src/server_threaded.c -lreadline
+	-o server.o -c src/server.c -lreadline
 
 logfile.o: src/logfile.c src/logfile.h
 	gcc -g -D_POSIX_SOURCE -Wall -Werror -pedantic -std=c99 -D_GNU_SOURCE -pthread \

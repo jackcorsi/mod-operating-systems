@@ -80,7 +80,8 @@ int main(int argc, char **argv) {
         errno = pthread_create(&client_thread, &thread_attr, main_client, newsockfd);
         if (errno) {
             perror("Failed to create a new thread for the client");
-            return 1;
+            close(*newsockfd);
+            free(newsockfd);
         }
     }
 }
@@ -91,6 +92,7 @@ void *main_client(void *sockfd_vptr) {
     if (!sockfile) {
         perror("Failed to open the network socket as a file");
         close(*sockfd);
+        free(sockfd);
         return NULL;
     }
 

@@ -5,13 +5,34 @@
 #include <pthread.h>
 #include <errno.h>
 #include <unistd.h>
+#include <string.h>
+#include <ctype.h>
 
 #include "protocol.h"
 #include "logfile.h"
 
+#define CLIENT_STATUS_MSGS
+
 const int BUFFER_PACKETS = 10;
 
 void *main_client(void *sockfd_vptr);
+int is_string_numeric(char *s); //Return 0 if no
+
+#ifdef CLIENT_STATUS_MSGS
+volatile unsigned long long next_client_id = 1;
+pthread_mutex_t client_id_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+unsigned long long assign_client_id() {
+    if (pthread_mutex_lock(&client_id_mutex))
+        return 0;
+
+    unsigned long long id = next_client_id++;
+
+    pthread_mutex_unlock(&client_id_mutex);
+
+    return id;
+}
+#endif
 
 int main(int argc, char **argv) {
     int sockfd; //Handle for the incoming connection socket
@@ -25,6 +46,11 @@ int main(int argc, char **argv) {
     if (open_err) {
         perror("Failed to open the specified file");
         return 1;
+    }
+
+    if (!is_string_numeric(argv[1])) {
+        printf("Invalid port number\n");
+        return 0;
     }
 
     long portno_l = strtol(argv[1], NULL, 10);
@@ -96,6 +122,11 @@ void *main_client(void *sockfd_vptr) {
         return NULL;
     }
 
+#ifdef CLIENT_STATUS_MSGS
+    unsigned long long my_id;
+    printf("Client %llu connected\n", my_id = assign_client_id());
+#endif
+
     char *buf = NULL;
     size_t buf_size = 0;
 
@@ -109,7 +140,10 @@ void *main_client(void *sockfd_vptr) {
 
         unsigned char continuation_byte = (unsigned char) continuation_byte_read;
         if (continuation_byte == PROTOCOL_FINISHED) {
-            printf("Client finished logging\n");
+#ifdef CLIENT_STATUS_MSGS
+            printf("Client %llu has finished\n", my_id);
+            fflush(stdout);
+#endif
             break;
         } else if (continuation_byte != PROTOCOL_MORE_STRINGS) {
             fprintf(stderr, "Protocol error, received continuation byte %u", continuation_byte);
@@ -133,4 +167,13 @@ void *main_client(void *sockfd_vptr) {
     close(*sockfd);
     free(sockfd);
     return NULL;
+}
+
+int is_string_numeric(char *s) {
+    size_t len = strlen(s);
+    for (size_t i = 0; i < len; i++) {
+        if (!isdigit(s[i]))
+            return 0;
+    }
+    return 1;
 }

@@ -32,8 +32,11 @@ int logfile_init(char *name) {
 
 int logfile_write(char *s) {
     //Increment line_no and write, as an atomic operation
-    pthread_mutex_lock(&mutex);
+    if ((errno = pthread_mutex_lock(&mutex)))
+        return -1;
+
     int result = fprintf(file, "%llu %s\n", line_no++, s);
+
     pthread_mutex_unlock(&mutex);
 
 #ifdef LOGFILE_FLUSH_ON_WRITE

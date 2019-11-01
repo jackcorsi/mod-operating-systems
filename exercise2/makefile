@@ -11,6 +11,7 @@ serverThreaded: server.o logfile.o
 	gcc -g -D_POSIX_SOURCE -Wall -Werror -pedantic -std=c99 -D_GNU_SOURCE -pthread \
 	-o serverThreaded server.o logfile.o -lreadline
 
+#maybe I could do some voodoo with a symbolic link but this is safer
 serverSingle: server.o logfile.o
 	gcc -g -D_POSIX_SOURCE -Wall -Werror -pedantic -std=c99 -D_GNU_SOURCE -pthread \
 	-o serverSingle server.o logfile.o -lreadline

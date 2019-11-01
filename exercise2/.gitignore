@@ -11,3 +11,6 @@ CMakeLists.txt
 *.o
 client
 serverThreaded
+
+#Custom testing
+logfile.txt

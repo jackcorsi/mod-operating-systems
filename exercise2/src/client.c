@@ -10,8 +10,6 @@
 #define PRINT_SOCKET_CREATION_ERROR() //perror(NULL); fflush(stderr)
 #define PRINT_SOCKET_CONNECT_ERROR() //perror(NULL); fflush(stderr)
 
-//Maybe print an appropriate message for the getaddrinfo result
-void interpret_addrparse_error(int err);
 
 int sockfd = 0; //Handle for the socket
 
@@ -27,9 +25,9 @@ int main(int argc, char **argv) {
     parse_hints.ai_socktype = SOCK_STREAM;
 
     struct addrinfo *parse_result;
-    int parse_error = getaddrinfo(argv[0], argv[1], &parse_hints, &parse_result);
+    int parse_error = getaddrinfo(argv[1], argv[2], &parse_hints, &parse_result);
     if (parse_error) {
-        interpret_addrparse_error(parse_error);
+        printf("Failed to interpret hostname/port number: %s", gai_strerror(parse_error));
         return 0;
     }
 
@@ -56,34 +54,33 @@ int main(int argc, char **argv) {
         return -1;
     }
 
+    char *line;
     while (1) {
-        char *line = readline(NULL);
+        line = readline(NULL);
+
         if (!line) {
-            if (write(sockfd, &PROTOCOL_FINISHED, sizeof(PROTOCOL_FINISHED) == -1))
-                perror(NULL);
+            if (write(sockfd, &PROTOCOL_FINISHED, sizeof(PROTOCOL_FINISHED)) == -1)
+                perror("Failed while sending a terminating message to the server");
 
             break;
         }
 
-        if (write(sockfd, &PROTOCOL_MORE_STRINGS, sizeof(PROTOCOL_MORE_STRINGS))) {
-            perror(NULL);
+        if (write(sockfd, &PROTOCOL_MORE_STRINGS, sizeof(PROTOCOL_MORE_STRINGS)) == -1) {
+            perror("Failed to send continuation byte to server");
             free(line);
             break;
         }
 
         size_t len = strlen(line);
 
-        if (write(sockfd, line, len) == -1) { //Send the string to the server
-            perror(NULL);
+        if (write(sockfd, line, len + 1) == -1) { //Send the string to the server
+            perror("Failed to send the line to the server");
             free(line);
             break;
         }
         free(line);
     }
 
+    free(line);
     close(sockfd);
-}
-
-void interpret_addrparse_error(int err) {
-    printf("interpret_addrparse_error not implemented\n");
 }

@@ -11,11 +11,11 @@
 #include "protocol.h"
 #include "logfile.h"
 
-#define CLIENT_STATUS_MSGS
+#define CLIENT_STATUS_MSGS //Log clients in and out
 
 const int BUFFER_PACKETS = 10;
 
-void *main_client(void *sockfd_vptr);
+void *main_client(void *sockfd_vptr); //Client thread routine
 int is_string_numeric(char *s); //Return 0 if no
 
 #ifdef CLIENT_STATUS_MSGS
@@ -60,6 +60,7 @@ int main(int argc, char **argv) {
     }
     uint16_t portno = portno_l;
 
+    //Boilerplate
     sockfd = socket(AF_INET6, SOCK_STREAM, 0);
     if (sockfd < 0) {
         perror("Failed to create socket");
@@ -83,23 +84,31 @@ int main(int argc, char **argv) {
         int *newsockfd = (int *) malloc(sizeof(int));
         if (!newsockfd) {
             fprintf(stderr, "Out of memory\n");
+            free(newsockfd);
+            close(sockfd);
             return 1;
         }
         *newsockfd = accept(sockfd, NULL, NULL); //Accept incoming as a new socket
         if (*newsockfd < 0) {
             perror("Failed to accept connection from the socket");
-            return 1;
+            free(newsockfd);
+            continue;
         }
 
         //Set the thread attributes as "detached" - automatically release its resources when it terminates
+        //"continue" to try to keep serving existing clients, although realistically if these fail our days are numbered
         pthread_attr_t thread_attr;
         if (pthread_attr_init(&thread_attr)) {
             perror("Failed to initialise pthread attributes");
-            return 1;
+            close(*newsockfd);
+            free(newsockfd);
+            continue;
         }
         if (pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED)) {
             perror("Failed to make pthread detached");
-            return 1;
+            close(*newsockfd);
+            free(newsockfd);
+            continue;
         }
 
         pthread_t client_thread;
@@ -110,6 +119,9 @@ int main(int argc, char **argv) {
             free(newsockfd);
         }
     }
+
+    //There's no specified way to actually stop the server, so I guess we just won't clean up?
+    //The client thread should at least be leak free
 }
 
 void *main_client(void *sockfd_vptr) {
@@ -127,7 +139,7 @@ void *main_client(void *sockfd_vptr) {
     printf("Client %llu connected\n", my_id = assign_client_id());
 #endif
 
-    char *buf = NULL;
+    char *buf = NULL; //Line reading buffer
     size_t buf_size = 0;
 
     while (1) {
@@ -157,7 +169,7 @@ void *main_client(void *sockfd_vptr) {
         }
 
         if (logfile_write(buf) < 0)
-            perror("Error: file write operation failed");
+            perror("File write operation failed");
 
     }
 

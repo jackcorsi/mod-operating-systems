@@ -1,6 +1,3 @@
-#include <stdint.h>
-#include <arpa/inet.h>
-
 #ifndef PROTOCOL_H
 #define PROTOCOL_H
 

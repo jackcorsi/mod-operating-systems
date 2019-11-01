@@ -57,6 +57,7 @@ int main(int argc, char **argv) {
     while (1) {
         line = readline(NULL);
 
+        //Lines are preceded by a continuation byte
         if (!line) {
             if (write(sockfd, &PROTOCOL_FINISHED, sizeof(PROTOCOL_FINISHED)) == -1)
                 perror("Failed while sending a terminating message to the server");

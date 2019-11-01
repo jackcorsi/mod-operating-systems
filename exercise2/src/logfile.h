@@ -7,7 +7,7 @@
 //Open the file ready for writing - return non-zero on success, errno set
 int logfile_init(char *name);
 
-//Write a null-terminated string to the file, prepended with a line number and appended with \n
+//Write a null-terminated string to the file, prepend with a line number and append with \n
 //Be sure to call logfile_init() first
 //Return a negative value on failure
 int logfile_write(char *s);

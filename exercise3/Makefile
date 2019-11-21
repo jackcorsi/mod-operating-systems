@@ -3,12 +3,14 @@ KERNELDIR=/lib/modules/`uname -r`/build
 #KERNELDIR=/usr/src/kernels/`uname -r`-i686
 
 EXTRA_CFLAGS += -I$(PWD)
+EXTRA_CFLAGS += -std=gnu99
 MODULES = charDeviceDriver.ko
 obj-m += charDeviceDriver.o
-#PROGS = ioctl
+
+PROGS = ioctl
 
 
-all: $(MODULES)  #$(PROGS)
+all: $(MODULES)  $(PROGS)
 
 charDeviceDriver.ko: charDeviceDriver.c
 	make -C $(KERNELDIR) M=$(PWD) modules
@@ -23,11 +25,8 @@ install:
 quickInstall:
 	cp $(MODULES) /lib/modules/`uname -r`/extra
 
+ioctl: ioctl.o
+	gcc -Wall -Werror -o $@ $<
 
-# Stuff from the example makefile
-
-# ioctl: ioctl.o
-# 	gcc -Wall -Werror -o $@ $<
-#
-# ioctl.o: ioctl.c charDeviceDriver.h
-# 	gcc -Wall -Werror -c $<
+ioctl.o: ioctl.c
+	gcc -Wall -Werror -c $<

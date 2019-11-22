@@ -4,11 +4,10 @@ KERNELDIR=/lib/modules/`uname -r`/build
 
 EXTRA_CFLAGS += -I$(PWD)
 EXTRA_CFLAGS += -std=gnu99
-MODULES = charDeviceDriver.ko
-obj-m += charDeviceDriver.o
+MODULES = charDeviceDriver.ko charDeviceDriverBlocking.ko
+obj-m += charDeviceDriver.o charDeviceDriverBlocking.o
 
 PROGS = ioctl
-
 
 all: $(MODULES)  $(PROGS)
 
@@ -30,3 +29,9 @@ ioctl: ioctl.o
 
 ioctl.o: ioctl.c
 	gcc -Wall -Werror -c $<
+
+custom_test1: custom_test1.o
+	gcc -Wall -Werror -o custom_test1 custom_test1.o -pthread
+
+custom_test1.o: custom_test1.c
+	gcc -Wall -Werror -c custom_test1.c -pthread

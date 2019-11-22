@@ -3,6 +3,7 @@
 #include <linux/fs.h>
 #include <linux/slab.h>
 #include <linux/uaccess.h>
+#include <linux/wait.h>
 #include <asm/uaccess.h>
 
 #pragma clang diagnostic push
@@ -42,6 +43,98 @@ volatile unsigned long current_total_size = 0;
 volatile unsigned long max_total_size = 2 * 1024 * 1024;
 int major;
 
+
+#ifndef BUILD_BLOCKING_MODE
+//The non-blocking implementation
+
+int ins_msg(const message_t *msg) {
+    int error = 1;
+
+    mutex_lock(&mutex);
+    if (current_total_size + msg->size <= max_total_size) {
+        list_add_tail(&(msg->hd), &msgs_hd);
+        current_total_size += msg->size;
+        error = 0;
+    }
+    mutex_unlock(&mutex);
+    return error;
+}
+
+message_t *get_msg(void) {
+    message_t *msg = NULL;
+
+    mutex_lock(&mutex);
+    if (!list_empty(&msgs_hd)) {
+        struct list_head *msg_hd = msgs_hd.next;
+        list_del(msg_hd);
+        msg = list_entry(msg_hd, message_t, hd);
+        current_total_size -= msg->size;
+    }
+    mutex_unlock(&mutex);
+    return msg;
+}
+#else
+//The blocking implementation
+
+DECLARE_WAIT_QUEUE_HEAD(read_queue);
+DECLARE_WAIT_QUEUE_HEAD(write_queue);
+
+message_t *get_msg(void) {
+    message_t *msg = NULL;
+
+    while (1) {
+        mutex_lock(&mutex);
+        if (!list_empty(&msgs_hd)) {
+            struct list_head *msg_hd = msgs_hd.next;
+            list_del(msg_hd);
+            msg = list_entry(msg_hd, message_t, hd);
+            current_total_size -= msg->size;
+        }
+        mutex_unlock(&mutex);
+
+        if (msg)
+            break;
+
+        if (wait_event_interruptible(read_queue, current_total_size > 0)) {
+            printk(KERN_DEBUG "DEBUG3\n");
+            printk(KERN_INFO "Pending message read interrupted\n");
+            return NULL;
+        }
+    }
+
+    wake_up_interruptible(&write_queue); //Signal writers after a successful read
+    return msg;
+}
+
+int ins_msg(const message_t *msg) {
+    int retry = 1;
+
+    while (1) {
+        mutex_lock(&mutex);
+        if (current_total_size + msg->size <= max_total_size) {
+            list_add_tail(&(msg->hd), &msgs_hd);
+            current_total_size += msg->size;
+            retry = 0;
+        }
+        mutex_unlock(&mutex);
+
+        if (!retry)
+            break;
+
+        if (wait_event_interruptible(write_queue,
+                current_total_size + msg->size <= max_total_size)) {
+            printk(KERN_DEBUG "DEBUG7\n");
+            printk(KERN_INFO "Pending message write interrupted\n");
+            return -ERESTARTSYS;
+        }
+    }
+
+    wake_up_interruptible(&read_queue); //Signal readers after a successful write
+    return 0;
+}
+
+#endif
+
 int init_module() {
     major = register_chrdev(0, DEVICE_NAME, &FILE_OPERATIONS);
 
@@ -58,6 +151,11 @@ int init_module() {
     printk(KERN_INFO "the device file.\n");
     printk(KERN_INFO "Remove the device file and module when done.\n");
 
+#ifdef BUILD_BLOCKING_MODE
+    printk(KERN_INFO "Running in blocking mode\n");
+#else
+    printk(KERN_INFO "Running in non-blocking mode\n");
+#endif
     INIT_LIST_HEAD(&msgs_hd);
     return 0;
 }
@@ -85,16 +183,7 @@ static int device_open(struct inode * inode, struct file *file) {
 
 static ssize_t device_read(struct file *fp, char __user *buffer, size_t length, loff_t *offset) {
     //fp and offset not used
-    message_t *msg = NULL;
-
-    mutex_lock(&mutex);
-    if (!list_empty(&msgs_hd)) {
-        struct list_head *msg_hd = msgs_hd.next;
-        list_del(msg_hd);
-        msg = list_entry(msg_hd, message_t, hd);
-        current_total_size -= msg->size;
-    }
-    mutex_unlock(&mutex);
+    message_t *msg = get_msg();
 
     if (!msg)
         return -EAGAIN;
@@ -126,8 +215,10 @@ static ssize_t device_write(struct file *fp, const char __user *buffer, size_t l
     if (length > MAX_MESSAGE_SIZE)
         return -EINVAL;
 
+#ifndef BUILD_BLOCKING_MODE
     if (current_total_size + length > max_total_size)
         return -EAGAIN;
+#endif
 
     message_t *msg = kmalloc(sizeof(message_t) + length, GFP_KERNEL);
     if (copy_from_user(&(msg->data), buffer, length)) {
@@ -138,22 +229,11 @@ static ssize_t device_write(struct file *fp, const char __user *buffer, size_t l
     INIT_LIST_HEAD(&(msg->hd));
     msg->size = length;
 
-    int error = 1;
-
-    mutex_lock(&mutex);
-    if (current_total_size + length <= max_total_size) { //Since we were unlocked before, this could have changed
-        list_add_tail(&(msg->hd), &msgs_hd);
-        current_total_size += length;
-        error = 0;
-    }
-    mutex_unlock(&mutex);
+    int error = ins_msg(msg);
 
     if (error) {
-#ifdef DEBUG_MSGS
-        printk(KERN_DEBUG "device_write: Not enough room after locking");
         kfree(msg);
         return -EAGAIN;
-#endif
     }
 
     return length;

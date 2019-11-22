@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 
     int result = ioctl(fd, num, param);
     if (result >= 0)
-        printf("Result: %d", result);
+        printf("Result: %d\n", result);
     else {
         perror("Negative return code");
     }

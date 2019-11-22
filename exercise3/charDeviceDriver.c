@@ -29,7 +29,7 @@ const struct file_operations FILE_OPERATIONS = {
         .release = device_release
 };
 
-DEFINE_MUTEX(mutex);
+DEFINE_MUTEX(mutex); //Critical sections access the list and the associated current_total_size count
 
 typedef struct message_t {
     volatile struct list_head hd;
@@ -37,12 +37,11 @@ typedef struct message_t {
     volatile char data[]; //C99 "flexible array member"
 } message_t;
 
-volatile struct list_head msgs_hd;
+volatile struct list_head msgs_hd; //The overall list head
 const size_t MAX_MESSAGE_SIZE = 4 * 1024;
 volatile unsigned long current_total_size = 0;
 volatile unsigned long max_total_size = 2 * 1024 * 1024;
 int major;
-
 
 #ifndef BUILD_BLOCKING_MODE
 //The non-blocking implementation
@@ -82,7 +81,7 @@ DECLARE_WAIT_QUEUE_HEAD(write_queue);
 message_t *get_msg(void) {
     message_t *msg = NULL;
 
-    while (1) {
+    while (1) { //Keep trying until we're interrupted or successfully read
         mutex_lock(&mutex);
         if (!list_empty(&msgs_hd)) {
             struct list_head *msg_hd = msgs_hd.next;
@@ -96,7 +95,6 @@ message_t *get_msg(void) {
             break;
 
         if (wait_event_interruptible(read_queue, current_total_size > 0)) {
-            printk(KERN_DEBUG "DEBUG3\n");
             printk(KERN_INFO "Pending message read interrupted\n");
             return NULL;
         }
@@ -178,6 +176,7 @@ void cleanup_module() {
 
 static int device_open(struct inode * inode, struct file *file) {
     printk(KERN_INFO "device opened\n");
+    try_module_get(THIS_MODULE);
     return 0;
 }
 
@@ -216,7 +215,7 @@ static ssize_t device_write(struct file *fp, const char __user *buffer, size_t l
         return -EINVAL;
 
 #ifndef BUILD_BLOCKING_MODE
-    if (current_total_size + length > max_total_size)
+    if (current_total_size + length > max_total_size) //Checking before alloc and copy could save us some time
         return -EAGAIN;
 #endif
 
@@ -231,7 +230,7 @@ static ssize_t device_write(struct file *fp, const char __user *buffer, size_t l
 
     int error = ins_msg(msg);
 
-    if (error) {
+    if (error) { //Casued by an interrupt, or the total size quota being filled whilst we were copying
         kfree(msg);
         return -EAGAIN;
     }
@@ -241,6 +240,7 @@ static ssize_t device_write(struct file *fp, const char __user *buffer, size_t l
 
 static int device_release(struct inode *inode, struct file *file) {
     printk(KERN_INFO "device closed\n");
+    module_put(THIS_MODULE);
     return 0;
 }
 
@@ -252,7 +252,7 @@ static long device_ioctl(struct file *fp, unsigned int num, unsigned long param)
 
     int return_val;
 
-    mutex_lock(&mutex);
+    mutex_lock(&mutex); //Lock to prevent a write sneaking in and changing the total size
     if (param >= current_total_size) {
         max_total_size = param;
         return_val = 0;
